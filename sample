@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Library Tracker</title>
+    <!-- Load Tailwind CSS for modern, clean styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the dialog/modal backdrop */
+        dialog::backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+        /* Style for the button background based on read status */
+        .read-status-true {
+            background-color: #10B981; /* Green */
+        }
+        .read-status-false {
+            background-color: #EF4444; /* Red */
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary': '#4F46E5',
+                        'secondary': '#6366F1',
+                        'accent': '#FBBF24',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white shadow-lg p-6">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-primary">📖 My Library</h1>
+            <button id="newBookBtn" class="bg-primary hover:bg-secondary text-white font-semibold py-2 px-6 rounded-full shadow-md transition duration-300">
+                + Add New Book
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-6xl mx-auto w-full p-6 flex-grow">
+        <h2 class="text-2xl font-semibold mb-6 text-gray-700">Your Collection</h2>
+        
+        <!-- Library Display Grid -->
+        <div id="libraryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Book cards will be inserted here by JavaScript -->
+        </div>
+    </main>
+
+    <!-- New Book Dialog Modal -->
+    <dialog id="newBookDialog" class="p-6 rounded-xl shadow-2xl backdrop:blur-sm max-w-lg w-full">
+        <h3 class="text-2xl font-bold text-primary mb-4">Add a New Book</h3>
+        <form id="newBookForm" class="space-y-4">
+            <div>
+                <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
+                <input type="text" id="title" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
+            </div>
+            <div>
+                <label for="author" class="block text-sm font-medium text-gray-700">Author</label>
+                <input type="text" id="author" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
+            </div>
+            <div>
+                <label for="pages" class="block text-sm font-medium text-gray-700">Pages</label>
+                <input type="number" id="pages" required min="1" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
+            </div>
+            <div class="flex items-center space-x-2">
+                <input type="checkbox" id="read" class="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary">
+                <label for="read" class="text-sm font-medium text-gray-700">I have read this book</label>
+            </div>
+            <div class="flex justify-end space-x-3 pt-4">
+                <button type="button" id="closeDialogBtn" class="bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-full hover:bg-gray-400 transition duration-150">
+                    Cancel
+                </button>
+                <button type="submit" class="bg-accent text-gray-800 font-semibold py-2 px-4 rounded-full hover:bg-yellow-400 transition duration-150">
+                    Add Book
+                </button>
+            </div>
+        </form>
+    </dialog>
+
+    <script>
+        const myLibrary = [];
+        const libraryGrid = document.getElementById('libraryGrid');
+        const newBookDialog = document.getElementById('newBookDialog');
+        const newBookBtn = document.getElementById('newBookBtn');
+        const closeDialogBtn = document.getElementById('closeDialogBtn');
+        const newBookForm = document.getElementById('newBookForm');
+
+        /**
+         * Class representing a Book.
+         * Includes a method to toggle the read status.
+         */
+        class Book {
+            constructor(title, author, pages, read = false) {
+                this.id = crypto.randomUUID(); // Unique identifier
+                this.title = title;
+                this.author = author;
+                this.pages = pages;
+                this.read = read;
+            }
+
+            /** Toggles the read status of the book instance. */
+            toggleReadStatus() {
+                this.read = !this.read;
+            }
+        }
+
+        /**
+         * Takes form arguments, creates a Book object, and stores it in the myLibrary array.
+         * @param {string} title 
+         * @param {string} author 
+         * @param {number} pages 
+         * @param {boolean} read 
+         */
+        function addBookToLibrary(title, author, pages, read) {
+            const newBook = new Book(title, author, pages, read);
+            myLibrary.push(newBook);
+            displayLibrary();
+        }
+
+        /**
+         * Loops through the myLibrary array and displays each book as a card on the page.
+         */
+        function displayLibrary() {
+            libraryGrid.innerHTML = ''; // Clear existing cards
+
+            myLibrary.forEach((book, index) => {
+                const card = document.createElement('div');
+                card.classList.add('book-card', 'bg-white', 'p-6', 'rounded-xl', 'shadow-xl', 'flex', 'flex-col', 'justify-between', 'border-t-4', book.read ? 'border-green-500' : 'border-red-500');
+                card.dataset.id = book.id;
+
+                const content = `
+                    <div>
+                        <h4 class="text-xl font-bold text-gray-900 mb-2">${book.title}</h4>
+                        <p class="text-primary font-medium mb-3">by ${book.author}</p>
+                        <p class="text-sm text-gray-500 mb-4">${book.pages} pages</p>
+                    </div>
+                    <div class="space-y-3 pt-3">
+                        <button class="toggle-read-btn w-full py-2 px-4 rounded-full text-white font-semibold transition duration-150 ${book.read ? 'read-status-true hover:bg-green-600' : 'read-status-false hover:bg-red-600'}">
+                            ${book.read ? 'Read' : 'Not Read'}
+                        </button>
+                        <button class="remove-btn w-full bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-full hover:bg-gray-300 transition duration-150">
+                            Remove
+                        </button>
+                    </div>
+                `;
+                card.innerHTML = content;
+                libraryGrid.appendChild(card);
+            });
+
+            attachCardListeners();
+        }
+
+        /**
+         * Attaches event listeners to the Remove and Toggle Read buttons.
+         */
+        function attachCardListeners() {
+            // Listener for removing a book
+            document.querySelectorAll('.remove-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const card = e.target.closest('.book-card');
+                    const bookId = card.dataset.id;
+                    const indexToRemove = myLibrary.findIndex(book => book.id === bookId);
+                    
+                    if (indexToRemove !== -1) {
+                        myLibrary.splice(indexToRemove, 1);
+                        displayLibrary(); // Re-render the library
+                    }
+                });
+            });
+
+            // Listener for toggling read status
+            document.querySelectorAll('.toggle-read-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const card = e.target.closest('.book-card');
+                    const bookId = card.dataset.id;
+                    const bookToToggle = myLibrary.find(book => book.id === bookId);
+                    
+                    if (bookToToggle) {
+                        bookToToggle.toggleReadStatus(); // Toggle status on the object
+                        displayLibrary(); // Re-render the library
+                    }
+                });
+            });
+        }
+
+        /* === Event Listeners for Form/Dialog === */
+        
+        // Open the dialog modal
+        newBookBtn.addEventListener('click', () => {
+            newBookDialog.showModal();
+        });
+
+        // Close the dialog modal
+        closeDialogBtn.addEventListener('click', () => {
+            newBookDialog.close();
+            newBookForm.reset();
+        });
+
+        // Handle form submission
+        newBookForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // Crucial: Stop default form submission/page reload
+
+            const title = document.getElementById('title').value;
+            const author = document.getElementById('author').value;
+            const pages = parseInt(document.getElementById('pages').value, 10);
+            const read = document.getElementById('read').checked;
+
+            addBookToLibrary(title, author, pages, read);
+
+            // Close modal and reset form fields
+            newBookDialog.close();
+            newBookForm.reset();
+        });
+
+        /* === Initial Load: Add Dummy Books === */
+        function initializeLibrary() {
+            addBookToLibrary("The Lord of the Rings", "J.R.R. Tolkien", 1178, true);
+            addBookToLibrary("Dune", "Frank Herbert", 412, true);
+            addBookToLibrary("The Name of the Wind", "Patrick Rothfuss", 662, false);
+            
+            displayLibrary();
+        }
+        
+        window.onload = initializeLibrary;
+
+    </script>
+</body>
+</html>
