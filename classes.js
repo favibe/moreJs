@@ -61,7 +61,7 @@ p1.greet(); // from Person
 p1.play();  // from Player
 
 
-/* tatic Properties and Methods
+/* Static Properties and Methods
 
 Static members belong to the class itself, not the instances.
 */
